@@ -17,25 +17,31 @@ def log_virtual_trade(strategy_id, ticker, side, price, logic):
 
 def check_market_inefficiency():
     """
-    Experimental function called by cron.
-    MODE: 100% Certainty Deterministic Execution.
-    Transitions from Log -> Paper Execution ONLY on absolute certainty.
+    Orchestrator for Parallel Strategy Testing.
+    Scans for multiple independent theories simultaneously.
     """
-    # 1. LOAD CONFIG & AUTH
     load_dotenv()
-    api_key = os.getenv('ALPACA_PAPER_KEY_ID')
-    secret_key = os.getenv('ALPACA_PAPER_SECRET_KEY')
+    timestamp = datetime.datetime.now()
     
-    # 2. ANALYSIS ENGINE (STUB FOR DETERMINISTIC LOGIC)
-    # This will be populated with specific structural arb logic
-    # e.g., ETF correlation divergence > 4 std dev with known mean reversion.
-    certainty_score = 0.0  # Range 0.0 to 1.0 (1.0 = Absolute Certainty)
-    
-    # Placeholder Logic
-    print(f"[{datetime.datetime.now()}] Scanning for 1.0 certainty patterns...")
-    
-    # 3. VIRTUAL LOGGING (PRIMARY)
-    # log_virtual_trade("DET-1", "SPY", "LONG", 500.00, "Structural Index Rebalance Certainty")
+    # THEORY LIST for Parallel Testing
+    strategies = [
+        {"id": "DET-1", "name": "Basis Arb", "threshold": 1.0},
+        {"id": "DET-2", "name": "Div Capture Hedge", "threshold": 1.0},
+        {"id": "DET-3", "name": "Corp Action Arb", "threshold": 1.0},
+        {"id": "DET-4", "name": "Passive Flow", "threshold": 1.0}
+    ]
+
+    print(f"[{timestamp}] Starting Multi-Theory Scan...")
+
+    for strat in strategies:
+        # Placeholder for specific logic modules
+        # score = eval_strategy(strat['id'])
+        score = 0.0 
+        print(f"  > Scanning {strat['id']} ({strat['name']}): Current Certainty {score}")
+        
+        if score >= strat['threshold']:
+            print(f"  !!! 1.0 CERTAINTY DETECTED: {strat['id']}")
+            log_virtual_trade(strat['id'], "SCAN", "SIGNAL", 0.0, "Detailed Hypothesis Proof")
 
     # 4. CONDITIONAL PAPER EXECUTION (STRICT VIRTUAL MODE)
     if certainty_score >= 1.0:
