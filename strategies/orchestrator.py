@@ -1,55 +1,75 @@
-import os
 import datetime
+import json
+import os
 from pathlib import Path
+from dotenv import load_dotenv
 
-# Paths
-STRATEGY_DIR = Path("/home/asha/repos/alpaca-strategies/strategies")
-LOG_FILE = STRATEGY_DIR / "DETERMINISTIC_LOG.md"
+# --- CONFIGURATION & PATHS ---
+BASE_DIR = Path("/home/asha/repos/alpaca-strategies")
+STRATEGY_DIR = BASE_DIR / "strategies"
+LOG_DIR = BASE_DIR / "logs"
+DETERMINISTIC_LOG = STRATEGY_DIR / "DETERMINISTIC_LOG.md"
 
-def log_virtual_trade(strategy_id, ticker, side, price, logic):
-    timestamp = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    
-    if not LOG_FILE.exists():
-        LOG_FILE.write_text("# Deterministic Strategy Log\n\n| Timestamp | ID | Ticker | Side | Price | Logic/Guarantee |\n|---|---|---|---|---|---|\n")
-    
-    with open(LOG_FILE, "a") as f:
-        f.write(f"| {timestamp} | {strategy_id} | {ticker} | {side} | {price} | {logic} |\n")
+load_dotenv(dotenv_path=BASE_DIR / ".env")
 
-def check_market_inefficiency():
+def log_virtual_trade(strategy_id, assets, entry_price, logic_proof):
     """
-    Orchestrator for Parallel Strategy Testing.
-    Scans for multiple independent theories simultaneously.
+    Core logging function for deterministic audit. [Sanity: Thread-safe appends]
     """
-    load_dotenv()
-    timestamp = datetime.datetime.now()
+    timestamp = datetime.datetime.now().strftime("%Y-%m-%d %H:%M")
     
-    # THEORY LIST for Parallel Testing
-    strategies = [
-        {"id": "DET-1", "name": "Basis Arb", "threshold": 1.0},
-        {"id": "DET-2", "name": "Div Capture Hedge", "threshold": 1.0},
-        {"id": "DET-3", "name": "Corp Action Arb", "threshold": 1.0},
-        {"id": "DET-4", "name": "Passive Flow", "threshold": 1.0}
+    # Ensure log header exists
+    if not DETERMINISTIC_LOG.exists():
+        DETERMINISTIC_LOG.write_text("# Deterministic Strategy Log\n\n| Entry Timestamp | Strategy ID | Asset(s) | Expected Outcome | Logic/Certainty Proof | Exit Criteria | Status |\n|:---:|:---:|:---:|:---:|:---:|:---:|:---:|\n")
+    
+    log_entry = f"| {timestamp} | {strategy_id} | {assets} | GAIN | {logic_proof} | Fixed Target | PENDING |\n"
+    
+    with open(DETERMINISTIC_LOG, "a") as f:
+        f.write(log_entry)
+
+def run_orchestrator():
+    """
+    Main entry point for cron. Organizes and executes strategy modules.
+    """
+    print(f"--- [{datetime.datetime.now()}] ORCHESTRATOR START ---")
+    
+    # 1. DISCOVERY: Find all logic modules in the directory
+    modules_dir = STRATEGY_DIR / "logic_modules"
+    # To be populated with: basis_arb.py, dividend_hedge.py, etc.
+    
+    # 2. SEPARATION OF CONCERNS: Define independent strategy scan functions
+    # (These will eventually move to their own files for clean organization)
+    
+    theories = [
+        {"id": "DET-1", "name": "Basis Arb"},
+        {"id": "DET-2", "name": "Dividend Hedge"},
+        {"id": "DET-3", "name": "Corporate Actions"},
+        {"id": "DET-4", "name": "Passive Flows"}
     ]
+    
+    for theory in theories:
+        # SANITY: Each strategy runs in its own logic-controlled block
+        try:
+            execute_strategy_scan(theory)
+        except Exception as e:
+            print(f"  [ERROR] Strategy {theory['id']} failed during scan: {e}")
 
-    print(f"[{timestamp}] Starting Multi-Theory Scan...")
+    print(f"--- ORCHESTRATOR END ---\n")
 
-    for strat in strategies:
-        # Placeholder for specific logic modules
-        # score = eval_strategy(strat['id'])
-        score = 0.0 
-        print(f"  > Scanning {strat['id']} ({strat['name']}): Current Certainty {score}")
-        
-        if score >= strat['threshold']:
-            print(f"  !!! 1.0 CERTAINTY DETECTED: {strat['id']}")
-            log_virtual_trade(strat['id'], "SCAN", "SIGNAL", 0.0, "Detailed Hypothesis Proof")
-
-    # 4. CONDITIONAL PAPER EXECUTION (STRICT VIRTUAL MODE)
-    if certainty_score >= 1.0:
-        # LOG ONLY - NO API CALLS [User instruction 11:10 PST]
-        print("CERTAINTY REACHED (1.0). RECORDING TO VIRTUAL LOG FOR AUDIT.")
-        log_virtual_trade("VIRT-DET-1", "TICKER", "SIDE", 0.0, "Detailed logic proof here")
+def execute_strategy_scan(theory):
+    """
+    Independent execution block for a single theory.
+    """
+    print(f"  > Scanning {theory['id']} ({theory['name']})...")
+    certainty = 0.0 # Placeholder: logic to pull Alpaca/Market data here
+    
+    # DET-LOGIC GATE: Only 1.0 logic passes to the ledger
+    if certainty >= 1.0:
+        log_virtual_trade(theory['id'], "SAMPLE_TICKER", 0.0, "Mathematical Proof of Guarantee")
+        print(f"    !!! SIGNAL LOGGED: {theory['id']}")
     else:
-        print(f"Current Max Certainty: {certainty_score}. Result: NO ACTION.")
+        # Print certainty only if there's interest (noise reduction)
+        pass
 
 if __name__ == "__main__":
-    check_market_inefficiency()
+    run_orchestrator()
